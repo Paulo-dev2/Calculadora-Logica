@@ -61,10 +61,10 @@ function Home() {
          </Row>
  
          <Row>
-           <Button text="P" onPress={() => handleTap("number", "P")} />
-           <Button text="Q" onPress={() => handleTap("number", "Q")} />
-           <Button text="R" onPress={() => handleTap("number", 'R')} />
-           <Button text="S" onPress={() => handleTap("number", "S")} />
+           <Button text="P" onPress={() => handleTap("number", "P")} theme="secondary"/>
+           <Button text="Q" onPress={() => handleTap("number", "Q")} theme="secondary"/>
+           <Button text="R" onPress={() => handleTap("number", 'R')} theme="secondary"/>
+           <Button text="S" onPress={() => handleTap("number", "S")} theme="secondary"/>
          </Row>
  
          <Row>
@@ -76,7 +76,6 @@ function Home() {
  
          <Row>
            <Button text="<->" onPress={() => handleTap("number", "<->")} />
-           <Button text="+" onPress={() => handleTap("number", "+")} />
            <Button text="(" onPress={() => handleTap("number", "(")} />
            <Button text=")" onPress={() => handleTap("number", ")")} />
          </Row>

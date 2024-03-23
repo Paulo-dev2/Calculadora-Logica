@@ -2,7 +2,7 @@ class TreeNode {
     value: string;
     left: TreeNode | null;
     right: TreeNode | null;
-
+    
     constructor(value: string) {
         this.value = value;
         this.left = null;
@@ -10,104 +10,137 @@ class TreeNode {
     }
 }
 
-export const isOperator = (token: string): boolean =>
-    token == "^" ||
-    token == "V" ||
-    token == "~" ||
-    token == "->" ||
-    token == "<->";
+export const operators = new Set(["^", "V", "~", "->", "<>"]);
 
-const isPremise = (token: string): boolean =>
-    token == "P" ||
-    token == "Q" ||
-    token == "R" ||
-    token == "S";
+export const isOperator = (token: string): boolean => operators.has(token);
 
-const precedence = (op: string): number => {
-    switch (op) {
-        case '~':
-            return 3;
-        case '^':
-            return 2;
-        case 'V':
-            return 1;
-        default:
-            return 0;
+export  const premises = new Set(["P", "Q", "R", "S"]);
+
+const precedenceMap = new Map([
+    ["~", 3], // Negation
+    ["^", 2], // Conjunction (AND)
+    ["V", 1], // Disjunction (OR)
+    ["→", 0], // Conditional
+    ["↔", 0] // Biconditional
+]);
+
+const precedence = (op: string): number => precedenceMap.get(op) || 0;
+
+const createNode = (operators: string[], values: TreeNode[]): void => {
+    const node = new TreeNode(operators.pop() as string);
+    node.right = values.pop() as TreeNode;
+    if (node.value !== '~') { // Operador de negação só tem um operando
+        node.left = values.pop() as TreeNode;
     }
-}
+    values.push(node);
+};
 
-const buildTree = (expression: string): TreeNode | null => {
+export const buildTree = (tokens: string[]): TreeNode => {
     const values: TreeNode[] = [];
     const operators: string[] = [];
-    for (let char of expression) {
-        if (isPremise(char)) {
-            values.push(new TreeNode(char));
-        } else if (isOperator(char)) {
-            while (operators.length > 0 && precedence(char) <= precedence(operators[operators.length - 1])) {
-                const node = new TreeNode(operators.pop()!);
-                node.right = values.pop()!;
-                node.left = values.pop()!;
-                values.push(node);
+    const stack: TreeNode[] = [];
+
+    for (let i = 0; i < tokens.length; i++) {
+        if (premises.has(tokens[i])) {
+            values.push(new TreeNode(tokens[i]));
+        } else if (tokens[i] === '(') {
+            stack.push(values.pop()!); // Empilha o nó anterior
+            operators.push(tokens[i]);
+        } else if (tokens[i] === ')') {
+            while (operators.length > 0 && operators[operators.length - 1] !== '(') {
+                createNode(operators, values);
             }
-            operators.push(char);
+            operators.pop(); // Remove o '('
+            if (stack.length > 0) {
+                const subtree = stack.pop()!;
+                if (values.length > 0) {
+                    const operator = operators.pop()!;
+                    const root = new TreeNode(operator);
+                    root.left = subtree;
+                    root.right = values.pop()!;
+                    values.push(root);
+                } else {
+                    values.push(subtree);
+                }
+            }
+        } else if (tokens[i] === '-' && tokens[i + 1] === '>' && isOperator(tokens[i] + tokens[i + 1])) {
+            if (operators.length > 0) {
+                createNode(operators, values);
+            }
+            operators.push(tokens[i] + tokens[i + 1]);
+            i++; // Pula o próximo token porque já foi processado
+        } else if (tokens[i] === '<' && tokens[i + 1] === '>' && isOperator(tokens[i] + tokens[i + 1])) {
+            if (operators.length > 0) {
+                createNode(operators, values);
+            }
+            operators.push(tokens[i] + tokens[i + 1]);
+            i++; // Pula o próximo token porque já foi processado
+        } else if (isOperator(tokens[i])) {
+            while (
+                operators.length > 0 &&
+                precedence(tokens[i]) <= precedence(operators[operators.length - 1])
+            ) {
+                createNode(operators, values);
+            }
+            operators.push(tokens[i]);
         }
     }
+
     while (operators.length > 0) {
-        const node = new TreeNode(operators.pop()!);
-        node.right = values.pop()!;
-        node.left = values.pop()!;
-        values.push(node);
+        createNode(operators, values);
     }
-    return values.pop() || null;
-}
+    return values[0];
+};
 
-export const generateTruthTable = (expression: string): { [key: string]: boolean }[] => {
-    const variables = new Set(expression.replace(/[^P-S]/g, ''));
-    const combinations = generateCombinations(Array.from(variables));
-    const tree = buildTree(expression)!;
-    const truthTable: { [key: string]: boolean }[] = [];
-    for (let combination of combinations) {
-        const result = evaluateOperation(tree, combination);
-        truthTable.push({ ...combination, Result: result });
-    }
-    return truthTable;
-}
-
-const generateCombinations = (variables: string[]): { [key: string]: boolean }[] => {
-    const combinations: { [key: string]: boolean }[] = [];
+const generateCombinations = (variables: string[]): Set<object> => {
+    const combinations: any = new Set();
     const numberOfCombinations = Math.pow(2, variables.length);
     for (let i = 0; i < numberOfCombinations; i++) {
         const combination: { [key: string]: boolean } = {};
         for (let j = 0; j < variables.length; j++) {
             combination[variables[j]] = !!(i & (1 << j));
         }
-        combinations.push(combination);
+        combinations.add(combination);
     }
     return combinations;
-}
+};
 
 const evaluateOperation = (node: TreeNode | null, values: { [key: string]: boolean }): boolean => {
     if (!node) {
         return false;
     }
-    if (isPremise(node.value)) {
+    if (premises.has(node.value)) {
         return values[node.value];
     }
     const leftValue = evaluateOperation(node.left, values);
     const rightValue = node.right ? evaluateOperation(node.right, values) : false;
-    console.log({leftValue, rightValue})
     switch (node.value) {
-        case '^':
+        case "^":
             return leftValue && rightValue;
-        case 'V':
+        case "V":
             return leftValue || rightValue;
-        case '->':
-            return !(rightValue === true && leftValue === false);
-        case '~':
+        case "->":
+            return !(rightValue && !leftValue);
+        case "~":
             return !rightValue;
-        case '<->':
+        case "<>":
             return leftValue === rightValue;
         default:
             throw new Error(`Operador desconhecido: ${node.value}`);
     }
-}
+};
+
+export const generateTruthTable = (expression: string): object[] => {
+    const variables = Array.from(new Set(expression.replace(/[^P-S]/g, "")));
+    const combinations: any = generateCombinations(variables);
+    const tree = buildTree(expression.split(''));
+    const truthTable = [];
+    for (let combination of combinations) {
+        const result = evaluateOperation(tree, combination);
+        truthTable.push({
+            ...combination,
+            Result: result
+        });
+    }
+    return truthTable;
+};
