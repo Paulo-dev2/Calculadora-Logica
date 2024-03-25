@@ -120,7 +120,7 @@ const evaluateOperation = (node: TreeNode | null, values: { [key: string]: boole
         case "V":
             return leftValue || rightValue;
         case "->":
-            return !(rightValue && !leftValue);
+            return !(leftValue && !rightValue)
         case "~":
             return !rightValue;
         case "<>":
