@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { SafeAreaView, StatusBar, View, Text } from 'react-native';
 import { styles } from './styles';
 import Row from '../../components/Row';
@@ -11,12 +11,13 @@ import { useNavigation } from '@react-navigation/native';
 
 function Home() {
   const [result, setResult] = useState<Boolean>(false)
+  const [error, setError] = useState<string>("");
   const [expressao, setExpressao] = useState("");
   const dispatch = useDispatch();
   const navigation  = useNavigation();
-  const error: string = "Invalid Expression"
 
   const handleTap = (type: string, value: String = "" ) => {
+    setError("")
     if(type == "clear") setExpressao("")
     if(type == "del") setExpressao(prevState => prevState.slice(0, -1))
     setExpressao(prevState => prevState + value);
@@ -26,6 +27,7 @@ function Home() {
     const result = calculator(expressao)
     if (!result) {
       setResult(false);
+      setError("Invalid Expression");
       return;
     }
     dispatch(setTruthTable(result.truthTable)); // Despachando a ação setTruthTable
@@ -39,8 +41,8 @@ function Home() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={{marginBottom: 50}}>
-           <Text style={styles.value}>
-           {expressao}
+          <Text style={styles.value}>
+          {error ? <Text>{error}</Text> : expressao}
          </Text>
          <Row>
            <Button
@@ -75,7 +77,7 @@ function Home() {
          </Row>
  
          <Row>
-           <Button text="<->" onPress={() => handleTap("number", "<->")} />
+           <Button text="<>" onPress={() => handleTap("number", "<>")} />
            <Button text="(" onPress={() => handleTap("number", "(")} />
            <Button text=")" onPress={() => handleTap("number", ")")} />
          </Row>

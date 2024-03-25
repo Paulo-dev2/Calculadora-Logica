@@ -1,15 +1,16 @@
-import { buildTree, generateTruthTable, isOperator, operators } from "./tree";
+import { buildTree, generateTruthTable, isOperator, isPremises, operators } from "./tree";
 
 const cleanExpression = (expression: string): string => expression.replace(/\s/g, "");
 
 const extractPremises = (expression: string): string[] => Array.from(new Set(expression.match(/[P-S]/g) || []));
 
-const isValidOperatorSequence = (expression: string): boolean => {
+const isValidSequence = (expression: string): boolean => {
     const lastChar = expression[expression.length - 1];
     if (operators.has(lastChar)) {
         return false;
     }
     for (let i = 0; i < expression.length - 1; i++) {
+        if (isPremises(expression[i]) && isPremises(expression[i + 1])) return false;
         if (isOperator(expression[i]) && isOperator(expression[i + 1])) return false;
         if (isOperator(expression[i]) && expression[i + 1] === ")") return false;
         if (isOperator(expression[i]) && i === 0 && expression[i] !== "~") return false;
@@ -18,7 +19,7 @@ const isValidOperatorSequence = (expression: string): boolean => {
 };
 
 const calculate = (expression: string): { truthTable: object[], tableHeader: string[] } | false | undefined => {
-    if (expression.length === 0) return;
+    if (expression.length === 0) return false;
     const cleanedExpression = cleanExpression(expression);
     const {
         openParentheses,
@@ -26,12 +27,11 @@ const calculate = (expression: string): { truthTable: object[], tableHeader: str
     } = countParentheses(cleanedExpression);
     if (openParentheses !== closeParentheses) return false;
 
-    if (!isValidOperatorSequence(cleanedExpression)) return false;
+    if (!isValidSequence(cleanedExpression)) return false;
 
     const premises = extractPremises(expression);
 
     const tree = buildTree(cleanedExpression.split(''));
-    console.log(tree);
     const tableHeader = [...premises, cleanedExpression];
     const truthTable = generateTruthTable(cleanedExpression);
     return {

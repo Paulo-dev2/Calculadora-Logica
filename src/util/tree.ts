@@ -14,7 +14,9 @@ export const operators = new Set(["^", "V", "~", "->", "<>"]);
 
 export const isOperator = (token: string): boolean => operators.has(token);
 
-export  const premises = new Set(["P", "Q", "R", "S"]);
+export const premises = new Set(["P", "Q", "R", "S"]);
+
+export const isPremises = (token: string): boolean => premises.has(token)
 
 const precedenceMap = new Map([
     ["~", 3], // Negation
@@ -41,7 +43,7 @@ export const buildTree = (tokens: string[]): TreeNode => {
     const stack: TreeNode[] = [];
 
     for (let i = 0; i < tokens.length; i++) {
-        if (premises.has(tokens[i])) {
+        if (isPremises(tokens[i])) {
             values.push(new TreeNode(tokens[i]));
         } else if (tokens[i] === '(') {
             stack.push(values.pop()!); // Empilha o nó anterior
