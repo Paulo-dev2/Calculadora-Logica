@@ -55,3 +55,7 @@
     Execute npm start para iniciar a aplicação no seu dispositivo móvel ou emulador.
     Contribuição
     Contribuições são bem-vindas! Se você identificar problemas, bugs ou tiver sugestões de novos recursos, fique à vontade para abrir uma issue ou enviar um pull request. Juntos, podemos melhorar e expandir ainda mais a Calculadora de Lógica Proposicional.
+
+![Screenshot_2024-03-23-18-04-28-021_host exp exponent](https://github.com/Paulo-dev2/Calculadora-Logica/assets/65676235/26bd22a6-c7f4-4dca-bf3b-657643e46914)
+
+![Screenshot_2024-03-23-18-04-32-528_host exp exponent](https://github.com/Paulo-dev2/Calculadora-Logica/assets/65676235/ecac4fd5-e4e6-4775-aefe-1b857a8554ba)
