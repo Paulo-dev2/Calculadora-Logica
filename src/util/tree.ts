@@ -40,67 +40,56 @@ const createNode = (operators: string[], values: TreeNode[]): void => {
 export const buildTree = (tokens: string[]): TreeNode => {
     const values: TreeNode[] = [];
     const operators: string[] = [];
-    const stack: TreeNode[] = [];
+    const parentese: string[] = [];
+
+    const processOperator = (operator: string) => {
+        while (
+            operators.length > 0 &&
+            precedence(operator) <= precedence(operators[operators.length - 1])
+        ) {
+            createNode(operators, values);
+        }
+        operators.push(operator);
+    };
 
     for (let i = 0; i < tokens.length; i++) {
-        if (isPremises(tokens[i])) {
-            values.push(new TreeNode(tokens[i]));
-        } else if (tokens[i] === '(') {
-            stack.push(values.pop()!); // Empilha o nó anterior
-            operators.push(tokens[i]);
-        } else if (tokens[i] === ')') {
-            while (operators.length > 0 && operators[operators.length - 1] !== '(') {
-                createNode(operators, values);
-            }
-            operators.pop(); // Remove o '('
-            if (stack.length > 0) {
-                const subtree = stack.pop()!;
-                if (values.length > 0) {
-                    const operator = operators.pop()!;
-                    const root = new TreeNode(operator);
-                    root.left = subtree;
-                    root.right = values.pop()!;
-                    values.push(root);
-                } else {
-                    values.push(subtree);
+        switch (true) {
+            case isPremises(tokens[i]):
+                values.push(new TreeNode(tokens[i]));
+                break;
+            case tokens[i] === '(':
+                parentese.push(tokens[i]);
+                break;
+            case tokens[i] === ')':
+                while (operators.length > 0 && parentese[parentese.length - 1] !== '(') {
+                    createNode(operators, values);
                 }
-            }
-        } else if (tokens[i] === '-' && tokens[i + 1] === '>' && isOperator(tokens[i] + tokens[i + 1])) {
-            if (operators.length > 0) {
-                createNode(operators, values);
-            }
-            operators.push(tokens[i] + tokens[i + 1]);
-            i++; // Pula o próximo token porque já foi processado
-        } else if (tokens[i] === '<' && tokens[i + 1] === '>' && isOperator(tokens[i] + tokens[i + 1])) {
-            if (operators.length > 0) {
-                createNode(operators, values);
-            }
-            operators.push(tokens[i] + tokens[i + 1]);
-            i++; // Pula o próximo token porque já foi processado
-        } else if (isOperator(tokens[i])) {
-            while (
-                operators.length > 0 &&
-                precedence(tokens[i]) <= precedence(operators[operators.length - 1])
-            ) {
-                createNode(operators, values);
-            }
-            operators.push(tokens[i]);
+                parentese.pop(); // Remover o parêntese de abertura correspondente
+                operators.pop(); // Remover o operador '(' da pilha de operadores
+                break;
+            case isOperator(tokens[i] + tokens[i + 1]):
+                processOperator(tokens[i] + tokens[i + 1]);
+                i++; // Pula o próximo token porque já foi processado
+                break;
+            case isOperator(tokens[i]):
+                processOperator(tokens[i]);
+                break;
         }
     }
 
     while (operators.length > 0) {
         createNode(operators, values);
     }
-    return values[0];
+    return values.pop()!;
 };
 
-const generateCombinations = (variables: string[]): Set<object> => {
+const generateCombinations = (premissas: string[]): Set<object> => {
     const combinations: any = new Set();
-    const numberOfCombinations = Math.pow(2, variables.length);
+    const numberOfCombinations = Math.pow(2, premissas.length);
     for (let i = 0; i < numberOfCombinations; i++) {
         const combination: { [key: string]: boolean } = {};
-        for (let j = 0; j < variables.length; j++) {
-            combination[variables[j]] = !!(i & (1 << j));
+        for (let j = 0; j < premissas.length; j++) {
+            combination[premissas[j]] = !!(i & (1 << j));
         }
         combinations.add(combination);
     }
@@ -111,7 +100,7 @@ const evaluateOperation = (node: TreeNode | null, values: { [key: string]: boole
     if (!node) {
         return false;
     }
-    if (premises.has(node.value)) {
+    if (isPremises(node.value)) {
         return values[node.value];
     }
     const leftValue = evaluateOperation(node.left, values);
@@ -132,9 +121,27 @@ const evaluateOperation = (node: TreeNode | null, values: { [key: string]: boole
     }
 };
 
+
+const traverse = (node: any, level = 1, result: any = []) => {
+    if (node === null) {
+        return;
+    }
+
+    if (node.left !== null && node.right !== null) {
+        if (result[level] === undefined) {
+            result[level] = [];
+        }
+        result[level].push(`${node.left.value} ${node.value} ${node.right.value}`);
+    }
+
+    traverse(node.left, level + 1, result);
+    traverse(node.right, level + 1, result);
+    return result;
+}
+
 export const generateTruthTable = (expression: string): object[] => {
-    const variables = Array.from(new Set(expression.replace(/[^P-S]/g, "")));
-    const combinations: any = generateCombinations(variables);
+    const premissas = Array.from(new Set(expression.replace(/[^P-S]/g, "")));
+    const combinations: any = generateCombinations(premissas);
     const tree = buildTree(expression.split(''));
     const truthTable = [];
     for (let combination of combinations) {
